@@ -1,16 +1,18 @@
 const express=require('express')
 const User=require('../models/user')
+const auth=require('../middleware/auth')
 const router=new express.Router()
 
 //ALL USER ROUTES
 //route to get all the users
-router.get('/users',async(req,res)=>{
-    try{
-        const users=await User.find({})
-        res.send(users)
-    }catch(e){
-        res.status(500).send("Internal Server Error can not fetch all the data")
-    }
+router.get('/users/me',auth,async(req,res)=>{
+    // try{
+    //     const users=await User.find({})
+    //     res.send(users)
+    // }catch(e){
+    //     res.status(500).send("Internal Server Error can not fetch all the data")
+    // }
+    res.send(req.user)
 })
 
 // route for logging in 
