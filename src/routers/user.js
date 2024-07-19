@@ -4,18 +4,24 @@ const auth=require('../middleware/auth')
 const router=new express.Router()
 
 //ALL USER ROUTES
-//route to get all the users
-router.get('/users/me',auth,async(req,res)=>{
-    // try{
-    //     const users=await User.find({})
-    //     res.send(users)
-    // }catch(e){
-    //     res.status(500).send("Internal Server Error can not fetch all the data")
-    // }
-    res.send(req.user)
+
+
+//route to add or signup a user
+router.post('/users',async(req,res)=>{ 
+    // const user=new User(req.body)
+    try{
+        // await user.save()
+        const user=await User.create(req.body)
+        const token=await user.generateAuthToken();
+        res.status(201).send({user,token})
+    }catch(e){
+        res.status(400).send(e)
+    }
 })
 
-// route for logging in 
+
+
+// route for login
 router.post('/users/login',async(req,res)=>{
     try{
         const user=await User.findByCredentials(req.body.email,req.body.password)
@@ -27,6 +33,42 @@ router.post('/users/login',async(req,res)=>{
 })
 
 
+//route for logout
+router.post('/users/logout',auth,async(req,res)=>{
+    try{
+        req.user.tokens=req.user.tokens.filter((token)=>{
+            return token.token!==req.token
+        })
+        await req.user.save()
+        res.send({message:'logout done'})
+    }catch(e){
+         res.status(500).send("Can not log out, Please authorize")
+    }
+})
+
+
+//route for logoutall
+router.post('/users/logoutAll',auth,async(req,res)=>{
+    try{
+        req.user.tokens=[];
+        await req.user.save()
+        res.send({message:"logged out from all accounts"})
+    }catch(e){
+        res.status(500).send("Can not log out, Please authorize")
+    }
+})
+
+//route to get all the users
+router.get('/users/me',auth,async(req,res)=>{
+    // try{
+    //     const users=await User.find({})
+    //     res.send(users)
+    // }catch(e){
+    //     res.status(500).send("Internal Server Error can not fetch all the data")
+    // }
+    res.send(req.user)
+})
+
 //route to get a specific user
 router.get('/users/:id',async(req,res)=>{
     try{
@@ -37,19 +79,6 @@ router.get('/users/:id',async(req,res)=>{
         res.send(user)
     }catch(e){
         res.status(500).send("Internal Server Error can not fetch the data. Please try aggain later")
-    }
-})
-
-//route to add the user
-router.post('/users',async(req,res)=>{ 
-    // const user=new User(req.body)
-    try{
-        // await user.save()
-        const user=await User.create(req.body)
-        const token=await user.generateAuthToken();
-        res.status(201).send({user,token})
-    }catch(e){
-        res.status(400).send(e)
     }
 })
 
