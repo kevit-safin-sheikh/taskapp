@@ -11,7 +11,6 @@ const auth=async(req,res,next)=>{
     }   
     req.token=token;
     req.user=user
-    console.log('Auth Middleware: req.user is a', req.user.constructor.name); 
     next();
 
    }catch(e){
