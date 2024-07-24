@@ -1,5 +1,6 @@
 const express=require('express')
 const User=require('../models/user')
+const Task=require('../models/tasks')
 const auth=require('../middleware/auth')
 const router=new express.Router()
 
@@ -7,10 +8,8 @@ const router=new express.Router()
 
 
 //route to add or signup a user
-router.post('/users',async(req,res)=>{ 
-    // const user=new User(req.body)
+router.post('/users/signup',async(req,res)=>{ 
     try{
-        // await user.save()
         const user=await User.create(req.body)
         const token=await user.generateAuthToken();
         res.status(201).send({user,token})
@@ -58,33 +57,13 @@ router.post('/users/logoutAll',auth,async(req,res)=>{
     }
 })
 
-//route to get all the users
+//route to get the user
 router.get('/users/me',auth,async(req,res)=>{
-    // try{
-    //     const users=await User.find({})
-    //     res.send(users)
-    // }catch(e){
-    //     res.status(500).send("Internal Server Error can not fetch all the data")
-    // }
     res.send(req.user)
 })
 
-//route to get a specific user
-router.get('/users/:id',async(req,res)=>{
-    try{
-        const user=await User.findById(req.params.id)
-        if(!user){
-            return res.status(404).send("User not found")
-        }
-        res.send(user)
-    }catch(e){
-        res.status(500).send("Internal Server Error can not fetch the data. Please try aggain later")
-    }
-})
-
-
 //route to update the user
-router.patch('/users/:id',async(req,res)=>{
+router.patch('/users/me',auth,async(req,res)=>{
     const incomingUpdate=Object.keys(req.body)
     const allowedUpdates=['name','email','password','age']
     const validation=incomingUpdate.every((update)=>allowedUpdates.includes(update))    
@@ -93,17 +72,8 @@ router.patch('/users/:id',async(req,res)=>{
     }
 
     try{
-        const user=await User.findById(req.params.id)
-
-        incomingUpdate.forEach((update)=> user[update]=req.body[update])
-
+        const user=await User.findById(req.user._id)
         await user.save()
-
-
-        // const updatedUser=await User.findByIdAndUpdate(req.params.id,req.body,{new:true,runValidators:true})
-        if(!user){
-            return res.status(404).send("No user found to Update")
-        }
         res.send(user)
     }catch(e){
         res.status(500).send("Internal Server Error can not update user. Please try again later")
@@ -111,14 +81,14 @@ router.patch('/users/:id',async(req,res)=>{
 })
 
 //route to delete the user
-router.delete('/users/:id',async(req,res)=>{
+router.delete('/users/me',auth,async(req,res)=>{
     try{
-        const deletedUser=await User.findByIdAndDelete(req.params.id)
-        if(!deletedUser){
-            res.status(404).send("No user found to delete")
-        }
-        res.send(deletedUser)
+        const deletedUser=await User.findByIdAndDelete({_id:req.user._id})
+        const deletedTasks=await Task.deleteMany({owner:req.user._id})
+        res.send({deletedUser,deletedTasks})
+    
     }catch(e){
+        console.log(e)
         res.status(500).send("Internal Server error can not delete user.Please try again later")
     }
 })
