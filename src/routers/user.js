@@ -1,4 +1,5 @@
 const express=require('express')
+const sharp=require('sharp')
 const User=require('../models/user')
 const Task=require('../models/tasks')
 const auth=require('../middleware/auth')
@@ -107,7 +108,8 @@ router.delete('/users/me',auth,async(req,res)=>{
 router.post('/users/me/avatar',auth,upload.single('avatar'),async(req,res)=>{
     // console.log(req.file)
     // console.log(req.user)
-    req.user.avatar=req.file.buffer
+    const buffer=await sharp(req.file.buffer).resize({height:250,width:250}).png().toBuffer()
+    req.user.avatar=buffer
     await req.user.save();
     res.send()
 },(error,req,res,next)=>{
@@ -127,7 +129,7 @@ router.get('/users/:id/avatar',async(req,res)=>{
         if(!user || !user.avatar){
             throw new Error("User or avatar not found")
         }
-        res.set('Content-Type','image/jpeg')
+        res.set('Content-Type','image/png')
         res.send(user.avatar)
     }catch(e){
 
