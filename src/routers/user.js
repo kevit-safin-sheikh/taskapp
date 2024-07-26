@@ -3,7 +3,18 @@ const User=require('../models/user')
 const Task=require('../models/tasks')
 const auth=require('../middleware/auth')
 const router=new express.Router()
-
+const multer=require('multer')
+const upload=multer({
+    limits:{
+        fileSize:1000000
+    },
+    fileFilter(req,file,cb){
+        if(!file.originalname.match(/\.(jpg|jpeg|png)$/)){
+            return cb(new Error("Please Upload a jpg,jpeg or png"))
+        }
+        cb(undefined,true)
+    }
+})
 //ALL USER ROUTES
 
 
@@ -89,6 +100,37 @@ router.delete('/users/me',auth,async(req,res)=>{
     
     }catch(e){
         res.status(500).send("Internal Server error can not delete user.Please try again later")
+    }
+})
+
+//route for uploading profile picture
+router.post('/users/me/avatar',auth,upload.single('avatar'),async(req,res)=>{
+    // console.log(req.file)
+    // console.log(req.user)
+    req.user.avatar=req.file.buffer
+    await req.user.save();
+    res.send()
+},(error,req,res,next)=>{
+    res.status(400).send({error:error.message})
+})
+
+//route to delete the profile picture
+router.delete('/users/me/avatar',auth,async(req,res)=>{
+    req.user.avatar=undefined
+    await req.user.save()
+    res.send()
+})
+
+router.get('/users/:id/avatar',async(req,res)=>{
+    try{
+        const user=await User.findById(req.params.id)
+        if(!user || !user.avatar){
+            throw new Error("User or avatar not found")
+        }
+        res.set('Content-Type','image/jpeg')
+        res.send(user.avatar)
+    }catch(e){
+
     }
 })
 
