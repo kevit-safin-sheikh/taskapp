@@ -7,13 +7,41 @@ const router=new express.Router()
 //ALL TASKS ROUTE
 
 //route to get all tasks
+// /tasks?complete=true
+// /tasks?limit=10&skip=20
+// /task?sortBy=createdAt(dynamic):desc(asc)
 router.get('/tasks',auth,async(req,res)=>{
+    const match={};
+    const sort={};
+    if(req.query.completed){
+        match.completed=req.query.completed
+    }
+    if(req.query.sortBy){
+        const arr=req.query.sortBy.split(':')
+        sort[arr[0]]=parseInt(arr[1])
+        // console.log('----------------")
+        // console.log(sort)
+        // console.log("****************")
+        // console.log(arr)
+    }
+    // console.log(match.completed)
     try{
         // const task=await req.user.populate('tasks')
-        await req.user.populate('tasks')
+        await req.user.populate({
+            path:'tasks',
+            match,
+            options:{
+                limit:parseInt(req.query.limit),
+                skip:parseInt(req.query.skip),
+                sort
+            }
+    })
+        // console.log(req.user)
 
+        // const task=await Task.findOne({owner:req.user._id}).populate({path:'owner',select:{name:1}})
         res.send(req.user.tasks)
     }catch(e){
+        console.log(e)
         res.status(500).send("Internal Server Error can not fetch all the data")
     }
 })

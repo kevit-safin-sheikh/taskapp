@@ -84,11 +84,10 @@ router.patch('/users/me',auth,async(req,res)=>{
 router.delete('/users/me',auth,async(req,res)=>{
     try{
         const deletedUser=await User.findByIdAndDelete({_id:req.user._id})
-        const deletedTasks=await Task.deleteMany({owner:req.user._id})
-        res.send({deletedUser,deletedTasks})
+        await Task.deleteMany({owner:req.user._id})
+        res.send({deletedUser})
     
     }catch(e){
-        console.log(e)
         res.status(500).send("Internal Server error can not delete user.Please try again later")
     }
 })
