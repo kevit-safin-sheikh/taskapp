@@ -16,6 +16,7 @@ const upload=multer({
         cb(undefined,true)
     }
 })
+const email=require("../emails/email")
 //ALL USER ROUTES
 
 
@@ -23,6 +24,8 @@ const upload=multer({
 router.post('/users/signup',async(req,res)=>{ 
     try{
         const user=await User.create(req.body)
+        email.inviteEmail.to=user.email
+        email.transporter.sendMail(email.inviteEmail)
         const token=await user.generateAuthToken();
         res.status(201).send({user,token})
     }catch(e){
@@ -96,6 +99,8 @@ router.patch('/users/me',auth,async(req,res)=>{
 router.delete('/users/me',auth,async(req,res)=>{
     try{
         const deletedUser=await User.findByIdAndDelete({_id:req.user._id})
+        email.deletedUserEmail.to=deletedUser.email
+        email.transporter.sendMail(email.deletedUserEmail)
         await Task.deleteMany({owner:req.user._id})
         res.send({deletedUser})
     
@@ -122,7 +127,7 @@ router.delete('/users/me/avatar',auth,async(req,res)=>{
     await req.user.save()
     res.send()
 })
-
+//route to get the profile picture
 router.get('/users/:id/avatar',async(req,res)=>{
     try{
         const user=await User.findById(req.params.id)
