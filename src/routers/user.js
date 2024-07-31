@@ -88,6 +88,14 @@ router.patch('/users/me',auth,async(req,res)=>{
 
     try{
         const user=await User.findById(req.user._id)
+        
+        if (!user) {
+            return res.status(404).send({ error: "User not found." });
+        }
+
+        incomingUpdate.forEach((update) => {
+            user[update] = req.body[update];
+        });
         await user.save()
         res.send(user)
     }catch(e){
